@@ -1,0 +1,35 @@
+---
+# tasks file for Gdal
+- name: Create Image File folder 
+  file:
+    path: '{{ container_images }}/gdal'
+    state: directory
+    owner: '{{ ansible_user }}'
+    group: '{{ ansible_user }}'
+  become: true
+- name: Render Gdal Image
+  template:
+    src: Dockerfile.j2
+    dest: '{{ container_images }}/gdal/Dockerfile'
+- name: Render main.py
+  template:
+    src: main.j2.py
+    dest: '{{ container_images }}/gdal/main.py'
+- name: Build Gdal Image
+  shell:
+    cmd: 'podman image build . -t gdal:{{ gdal.ggs_version }}'
+    chdir: '{{ container_images }}/gdal'
+- name: Tag image (repo only)
+  shell:
+    cmd: 'podman tag gdal:{{ gdal.ggs_version }} {{ local_registry.url }}:{{ local_registry.port }}/{{ local_registry.repository }}/gdal:{{ gdal.ggs_version }}'
+- name: Push Image to repo 
+  shell:
+    cmd: 'podman push {{ local_registry.url }}:{{ local_registry.port }}/{{ local_registry.repository }}/gdal:{{ gdal.ggs_version }} --tls-verify=false'
+- name: Render Gdal Manifest
+  template:
+    src: gdal_deployment.j2.yaml
+    dest: '{{ manifest_folder }}/gdal_deployment.yaml'
+- name: Create Gdal Deployment
+  shell:
+    cmd: 'kubectl apply -f gdal_deployment.yaml -n {{ gisnamespace }}'
+    chdir: '{{ manifest_folder }}'

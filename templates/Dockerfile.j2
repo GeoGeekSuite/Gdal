@@ -1,0 +1,16 @@
+FROM {{ gdal.base_image }}:{{ gdal.base_image_version }}
+RUN apt update
+RUN apt install software-properties-common -y
+RUN add-apt-repository ppa:ubuntugis/ppa
+RUN apt update
+RUN apt install gdal-bin -y
+RUN apt install -y python3-pip
+RUN pip3 install psycopg2-binary
+RUN pip3 install pika
+
+WORKDIR /opt/gdal
+COPY main.py main.py
+
+
+
+CMD ["python3", "-u", "main.py"]
